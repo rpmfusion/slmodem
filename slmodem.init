@@ -1,0 +1,114 @@
+#!/bin/sh
+#
+# slmodem      This shell script takes care of starting and stopping
+#              the SmartLink modem userspace daemon.
+#
+# chkconfig: 2345 50 50
+# description: slmodemd is a daemon which is needed to use the SmartLink \
+#              softmodem.
+# processname: slmodemd
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+[ -x /usr/sbin/slmodemd ] || exit 0
+
+if [ -f /etc/sysconfig/slmodem ]; then
+    . /etc/sysconfig/slmodem
+fi
+
+if [ $COUNTRY ]; then
+    COUNTRYARG="-c $COUNTRY"
+fi
+
+if [ "$INTERFACE" == "alsa" ] && [ "$ALSA_DEVICE" != "" ]; then
+	DEVICE=$ALSA_DEVICE
+fi
+
+modules_load() {
+	case "$INTERFACE" in
+	  alsa)
+		ALSA="--alsa"
+		;;
+	  slamr)
+		if [ ! -f /lib/modules/$(uname -r)/extra/slmodem/slamr.ko ]; then
+			echo "Please install the slmodem-kmod package for your kernel"
+			exit 1
+		else
+			modprobe slamr
+			[ -e /dev/slamr ] || mknod /dev/slamr c 242 0
+			DEVICE=/dev/slamr
+		fi
+		;;
+	  slusb)
+		if [ ! -f /lib/modules/$(uname -r)/extra/slmodem/slusb.ko ]; then
+			echo "Please install the slmodem-kmod package for your kernel"
+			exit 1
+		else
+			modprobe slusb
+			[ -e /dev/slusb ] || mknod /dev/slusb c 243 0
+			DEVICE=/dev/slusb
+		fi
+		;;
+	  *)
+		echo "Please edit /etc/sysconfig/slmodem"
+		echo_failure
+		echo
+		exit 1
+		;;
+	esac
+}
+
+modules_unload() {
+	case "$INTERFACE" in
+	  slamr)
+		rmmod slamr > /dev/null
+		[ -c /dev/slamr ] && rm -f /dev/slamr > /dev/null
+		;;
+	  slusb)
+		rmmod slusb > /dev/null
+		[ -c /dev/slusb ] && rm -f /dev/slusb > /dev/null
+		;;
+	  *)
+		;;
+	esac
+}
+
+# See how we were called.
+case "$1" in
+  start)
+	# Start daemon.
+	echo -n $"Starting SmartLink modem daemon: "
+	modules_load
+	daemon /usr/sbin/slmodemd ${ALSA} ${COUNTRYARG} ${ARGS} --daemon ${DEVICE}
+	RETVAL=$?
+	echo
+	[ $RETVAL -eq 0 ] && touch /var/lock/subsys/slmodem
+	;;
+  stop)
+	# Stop daemon.
+	echo -n $"Shutting SmartLink modem daemon: "
+	killproc slmodemd
+	RETVAL=$?
+	modules_unload
+	echo
+	[ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/slmodem
+	;;
+  status)
+	status slmodemd
+	RETVAL=$?
+	;;
+  restart|reload)
+	$0 stop
+	$0 start
+	;;
+  condrestart)
+        [ -f /var/lock/subsys/slmodem ] && restart || :
+        ;;
+  *)
+	echo $"Usage: $0 {start|stop|status|restart|reload}"
+	RETVAL=1
+	;;
+esac
+
+exit $RETVAL

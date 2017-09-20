@@ -1,0 +1,96 @@
+Smart Link Soft Modem for Fedora
+********************************
+
+
+Introduction
+============
+
+The slmodem package available from http://rpm.livna.org is consisting of 
+two RPM packages, the slmodem package containing the needed userspace 
+daemon to control the modem-chipset and the slmodem-kmod package.
+
+slmodem-kmod provides proprietary kernel modules for certain PCI and USB 
+modems as well as several integrated modem chipsets in notebooks.
+
+Most Smart Link based modems integrated into today's notebooks however 
+do work without a proprietary kernel module. These chips are wired into 
+the sound codecs on the mainboard and can thus be controlled via the 
+alsa sound system in userspace.
+This results in a non-tainted kernel and less hassle when upgrading the 
+kernel and is thus to be prefered.
+
+
+
+Hardware Support
+================
+
+
+Proprietary Kernel Module (bad!)
+--------------------------------
+
+The following SmartLink modems should be supported by the slamr 
+kernel-module:
+
+ * HAMR5600 based AMR/CNR/MDC/ACR modem cards 
+ * SmartPCI56/561/562/563 based PCI modem cards
+ * Southbridge based chipsets
+   - Intel ICH0,ICH2, ICH3, ICH4
+   - Via 686A, 686B, 8231, 8233
+   - SiS 630
+   - ALI 1535.
+ 
+The slusb kernel modul supports the following modem chipsets:
+
+ * SmartUSB56 based USB modems
+
+
+Userspace Hardware Support with ALSA (good)
+-------------------------------------------
+
+The slmodemd userspace application is also able to control the following 
+modem chipsets without having to access proprietary kernel modules.
+
+ * intel8x0m (snd-intel8x0m) based chipsets
+   - ICH based AC97 Modems (MC97)
+   - SiS 630 Modems
+   - NVidia NForce Integrated Modem
+ * VIA686 (snd-via82xx-modem) based chipsets
+ * ATI IXP (snd-atiixp-modem) based chipsets
+
+
+
+Installation and Configuration
+==============================
+
+Depending on your hardware, you should first try installing slmodem and 
+running the slmodemd daemon in ALSA-mode.
+
+If this does not work, install the slmodem-kmod package and configure 
+the initscript to either load the slamr or the slusb kernel module.
+
+This can be achieved by editing /etc/sysconfig/slmodemd and setting the 
+INTERFACE variable to either alsa, slamr or slusb accordingly.
+
+Restarting the slmodemd by calling service slmodem restart or rebooting 
+will then load the correct module, initialise the device files and load 
+the userspace daemon.
+
+If your modem is supported by the driver, it can be accessed by using 
+/dev/ttySL0 as the modem device. This device can then be used to dial 
+out with the internal softmodem.
+
+
+
+Problems
+========
+
+Please keep in mind that this is not a fedora supplied package, and thus 
+you won't receive any support on any of the fedora or Red Hat 
+mailinglists. If your modem does somehow not work, please take a look at 
+<http://linmodems.technion.ac.il/> for more information. 
+<http://www.linmodems.org/> contains a mailinglist and a mailinglist 
+archive should be able to answer your questions.
+
+In case there is a bug related to the RPM-package from livna, please 
+file a bug at <http://bugzilla.livna.org>.
+
