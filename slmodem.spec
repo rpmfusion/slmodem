@@ -5,7 +5,7 @@
 Summary:         Userspace application for smartLink softmodems
 Name:            slmodem
 Version:         %{relver}
-Release:         5.%{datetag}%{?dist}
+Release:         7.%{datetag}%{?dist}
 Group:           System Environment/Daemons
 License:         BSD w/binary object
 # Outdated
@@ -19,7 +19,11 @@ Patch0:          slmodem-2.9.11-daemon.patch
 Patch1:          slmodem-2.9.11-create.patch
 BuildRoot:       %{_tmppath}/%{name}-%{version}-buildroot
 BuildRequires:   alsa-lib-devel
+%if 0%{?fedora} >= 11
+ExclusiveArch:   i586
+%else
 ExclusiveArch:   i386
+%endif
 Provides:        slmodem-alsa = %{version}, slmodem-kmod-common = %{version}
 Requires(post):  /sbin/chkconfig
 Requires(post):  /sbin/service
@@ -90,6 +94,12 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Sun Mar 29 2009 Julian Sikorski <belegdol@fedoraproject.org> - 2.9.11-7.20080817
+- Fedora 11 is i586, not i386
+
+* Sun Mar 29 2009 Thorsten Leemhuis <fedora [AT] leemhuis [DOT] info> - 2.9.11-6.20080817
+- rebuild for new F11 features
+
 * Sat Sep 08 2007 Andreas Thienemann <andreas@bawue.net> 2.9.11-4.20070813
 - Updated to recent slmodem package
 
